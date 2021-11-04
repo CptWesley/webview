@@ -91,14 +91,17 @@ WEBVIEW_API void webview_init(webview_t w, const char *js);
 WEBVIEW_API void webview_eval(webview_t w, const char *js);
 
 // Binds a native C callback so that it will appear under the given name as a
-// global JavaScript function. Internally it uses webview_init(). Callback
-// receives a request string and a user-provided argument pointer. Request
-// string is a JSON array of all the arguments passed to the JavaScript
+// global JavaScript function. Internally it uses webview_init() and webview_eval().
+// Callback receives a request string and a user-provided argument pointer.
+// Request string is a JSON array of all the arguments passed to the JavaScript
 // function.
 WEBVIEW_API void webview_bind(webview_t w, const char *name,
                               void (*fn)(const char *seq, const char *req,
                                          void *arg),
                               void *arg);
+
+// Removed a native C callback that was previously set by webview_bind.
+WEBVIEW_API void webview_unbind(webview_t w, const char *name);
 
 // Allows to return a value from the native binding. Original request pointer
 // must be provided to help internal RPC engine match requests with responses.
@@ -1275,6 +1278,13 @@ public:
     bindings[name] = new binding_ctx_t(new binding_t(f), arg);
   }
 
+  void unbind(const std::string name) {
+    auto js = "(function() {(window['" + name + "'] = undefined;})())";
+    init(js);
+    eval(js);
+    bindings.erase(name);
+  }
+
   void resolve(const std::string seq, int status, const std::string result) {
     dispatch([=]() {
       if (status == 0) {
@@ -1358,6 +1368,10 @@ WEBVIEW_API void webview_bind(webview_t w, const char *name,
         fn(seq.c_str(), req.c_str(), arg);
       },
       arg);
+}
+
+WEBVIEW_API void webview_unbind(webview_t w, const char *name) {
+  static_cast<webview::webview *>(w)->unbind(name);
 }
 
 WEBVIEW_API void webview_return(webview_t w, const char *seq, int status,
