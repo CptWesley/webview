@@ -1271,6 +1271,7 @@ public:
       }
     })())";
     init(js);
+    eval(js);
     bindings[name] = new binding_ctx_t(new binding_t(f), arg);
   }
 
