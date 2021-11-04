@@ -3,3 +3,4 @@
 webview
 webview_test
 *.dll
+.vscode/
